@@ -45,6 +45,8 @@ Si `socle.niveau` vaut `recommande` ou `renforce`, les règles R1–R8 (et les o
 
 ## Commandes utiles
 
-<!-- À compléter par les mainteneur·ices : installation, tests, génération des livrables. -->
+- Fiche factuelle d'un dépôt, sans modèle : `python3 travaux/archiviste.py fiche <dossier-du-depot> --sans-ia -o /tmp/fiches/`
+  (bibliothèque standard seulement ; ne pas commiter les fiches produites ici, elles iront dans `Memnius-PEE/archives`).
+- Aucun appel à l'essaim LocalAI tant que la décision 0004 (phase prospective) n'est pas remplacée.
 - Lancer les gardes comme la CI : cloner `Memnius-PEE/regles` et `Memnius-PEE/registre`
   (étiquette `v1`), puis `python3 regles/gardes/gardes.py --registre registre .`

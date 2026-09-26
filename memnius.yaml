@@ -1,35 +1,39 @@
 # Fiche d'identité du sujet, lue par le registre commun Memnius.
 # Schéma : https://github.com/Memnius-PEE/registre/blob/v1/schema/memnius.schema.json
-# Ne modifier que les valeurs ; les champs marqués (facultatif) peuvent être supprimés.
 schema: memnius/1
-id: SLUG-DU-SUJET              # identique au nom du dépôt GitHub, en minuscules-avec-tirets
-titre: TITRE_DU_SUJET
+id: archiviste-local
+titre: Archiviste sur modèles locaux
 resume: >-
-  RÉSUMÉ_EN_UNE_À_TROIS_PHRASES
-statut: actif                  # idee | actif | en-pause | termine | archive
-nature: etude                  # etude | lecture | outil | donnees | projet
-domaines: [DOMAINE]            # vocabulaire contrôlé : registre/vocabulaire.yaml
-mots_cles: []                  # (facultatif) libres
+  Concevoir l'archiviste du groupe : un agent qui tient une fiche d'archive par dépôt, alimente le
+  registre et scelle les sujets endormis, en s'appuyant sur des modèles d'IA locaux (essaim LocalAI).
+statut: actif
+nature: etude
+domaines: [ia, methodologie]
+mots_cles: [archivage, localai, modeles-locaux, llm, git, registre, essaim]
 langue: fr
 mainteneurs:
-  - github: IDENTIFIANT_GITHUB
-    nom: PRÉNOM
+  - github: Pwouette
+    nom: Romain
 contribution:
-  ouverte: true                # accepte-t-on de nouveaux contributeurs ?
-  niveau_entree: facile        # facile | moyen | expert
-outils: []                     # (facultatif) ex. [python, jupyter, latex, zotero, obsidian]
+  ouverte: true
+  niveau_entree: moyen
+outils: [python, markdown]
 agents:
-  politique: relecture-humaine # libre | relecture-humaine | interdit
-liens:                         # (facultatif)
-  sujets: []                   # ex. [{id: autre-sujet, relation: prolonge}]
-  externes: []                 # ex. [{titre: Article de référence, url: https://…}]
-socle:                         # socle commun suivi (Memnius-PEE/regles, REGLES.md)
+  politique: relecture-humaine
+liens:
+  sujets: []
+  externes:
+    - titre: Documentation de LocalAI
+      url: https://localai.io/
+    - titre: Socle commun Memnius (règles v1)
+      url: https://github.com/Memnius-PEE/regles/blob/v1/REGLES.md
+socle:
   version: v1
-  niveau: socle                # socle | recommande (dépôt à agents, R1–R8) | renforce (options O1–O8)
-  options: []                  # options adoptées, chacune par une entrée de decisions/, ex. [O6]
-licence: CC-BY-4.0             # identifiant SPDX
-visibilite: public             # public | prive (un dépôt privé n'a pas de garde A1 en offre gratuite)
-archivage:                     # (facultatif) consignes pour l'archiviste
-  politique: standard          # standard | prioritaire | exclure | local-seulement (traité seulement sur les machines des mainteneur·ices)
-  exclure: []                  # motifs de chemins ignorés, ex. ["donnees/brut/**"]
-cree_le: AAAA-MM-JJ
+  niveau: recommande
+  options: []
+licence: CC-BY-4.0
+visibilite: public
+archivage:
+  politique: standard
+  exclure: []
+cree_le: 2026-09-26
