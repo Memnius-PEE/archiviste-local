@@ -1,0 +1,10 @@
+# Gardes du socle commun Memnius (A2 à A6), maintenues dans le dépôt regles de l'organisation.
+# Le ruleset de main exige que ce contrôle soit vert avant toute fusion (garde A1).
+name: Memnius
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  gardes:
+    uses: Memnius-PEE/regles/.github/workflows/gardes.yml@v1

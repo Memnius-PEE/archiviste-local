@@ -1,0 +1,17 @@
+# Systèmes et éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.obsidian/workspace*
+# Python / notebooks
+__pycache__/
+.venv/
+.ipynb_checkpoints/
+# LaTeX
+*.aux
+*.log
+*.synctex.gz
+# Secrets
+.env
+*.key

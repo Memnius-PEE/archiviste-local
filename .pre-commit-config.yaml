@@ -1,0 +1,7 @@
+# Confort local, facultatif : la CI reste le seul verrou (voir REGLES.md du socle).
+# Installation : pip install pre-commit && pre-commit install
+repos:
+  - repo: https://github.com/Memnius-PEE/regles
+    rev: v1
+    hooks:
+      - id: memnius-gardes
