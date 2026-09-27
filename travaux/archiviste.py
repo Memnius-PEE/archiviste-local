@@ -31,7 +31,7 @@ import urllib.request
 from pathlib import Path
 
 SCHEMA = "memnius/fiche-archive/v1"
-VERSION_PROMPT = "fiche-v1"
+VERSION_PROMPT = "fiche-v2"
 
 # Fichiers jamais lus ni envoyés au modèle.
 FICHIERS_EXCLUS = re.compile(
@@ -46,6 +46,7 @@ SECRETS = re.compile(
     r"|(?i:(password|passwd|secret|token|api[_-]?key)\s*[:=]\s*\S{6,}))"
 )
 LIMITE_README = 4000
+LIMITE_PASSATION = 6000
 LIMITE_COMMITS = 40
 
 
@@ -66,6 +67,16 @@ def slug(nom: str) -> str:
 
 
 # --- Collecte des faits (déterministe) --------------------------------------
+
+def lire_fiche_sujet(texte: str) -> dict:
+    """Valeurs simples de premier niveau de memnius.yaml (sans dépendance YAML)."""
+    champs = {}
+    for ligne in texte.splitlines():
+        m = re.match(r"([a-z_]+):\s*([^#>|\[{\s][^#]*?)\s*(#.*)?$", ligne)
+        if m:
+            champs[m.group(1)] = m.group(2).strip("'\"")
+    return champs
+
 
 def collecter(depot: Path) -> dict:
     depot = depot.resolve()
@@ -99,9 +110,21 @@ def collecter(depot: Path) -> dict:
     if readme:
         texte_readme = masquer(git(depot, "show", f"HEAD:{readme}")[:LIMITE_README])
 
+    passation = present("PASSATION.md")
+    texte_passation = ""
+    if passation:
+        texte_passation = masquer(git(depot, "show", f"HEAD:{passation}")[:LIMITE_PASSATION])
+
+    etiquettes = git(depot, "tag", "--sort=-creatordate").split()
+
+    sujet = {}
+    if present("memnius.yaml"):
+        sujet = lire_fiche_sujet(git(depot, "show", "HEAD:memnius.yaml"))
+
     dates = sorted(c["date"] for c in commits)
     return {
-        "nom": depot.name,
+        "nom": sujet.get("id") or depot.name,
+        "titre": sujet.get("titre") or depot.name,
         "chemin": str(depot),
         "origine": origine,
         "commit": head,
@@ -110,12 +133,14 @@ def collecter(depot: Path) -> dict:
         "dernier_commit": dates[-1] if dates else None,
         "contributeurs": [{"nom": n, "commits": k} for n, k in par_auteur.most_common()],
         "nb_fichiers": len(fichiers),
+        "etiquettes": etiquettes[:20],
         "extensions": dict(extensions.most_common(12)),
         "dossiers": dict(dossiers.most_common(15)),
         "readme": readme,
         "texte_readme": texte_readme,
+        "texte_passation": texte_passation,
         "instructions_agents": [f for f in ("AGENTS.md", "CLAUDE.md", ".cursorrules", ".github/copilot-instructions.md") if present(f)],
-        "licence": present("LICENSE", "LICENSE.md", "LICENCE", "COPYING"),
+        "licence": sujet.get("licence") or present("LICENSE", "LICENSE.md", "LICENCE", "COPYING"),
         "derniers_commits": [
             {"date": c["date"][:10], "auteur": c["auteur"], "sujet": masquer(c["sujet"])}
             for c in commits[:LIMITE_COMMITS]
@@ -140,12 +165,21 @@ Réponds UNIQUEMENT par un objet JSON, en français, avec exactement ces clés :
 - "mots_cles" : liste de 3 à 8 mots-clés en minuscules.
 - "chronologie" : liste de 2 à 6 étapes {"periode": "AAAA-MM", "fait": "..."} déduites des commits.
 - "pour_reprendre" : 1 à 3 phrases pour quelqu'un qui reprendrait le sujet.
+- "incoherences" : liste (souvent vide) des contradictions entre le README, la passation et les faits calculés,
+  une phrase chacune, en citant les deux sources. Une information absente n'est pas une contradiction.
+Les sources n'ont pas la même fraîcheur : les faits calculés (dépôt distant, étiquettes, commits) font foi ; la passation décrit l'état
+à sa date ; le README peut être en retard. En cas de contradiction, suis les commits et signale-la dans
+"incoherences" au lieu de trancher en silence.
+Quand tu reprends un commit, garde l'objet qu'il nomme (ne remplace pas « LocalAI » par « le prototype »),
+et ne présente pas un outil comme un modèle ou l'inverse.
 N'invente rien qui ne figure pas dans les faits. Si une information manque, dis-le."""
 
 
 def prompt_faits(f: dict) -> str:
     lignes = [
-        f"Dépôt : {f['nom']}",
+        f"Dépôt : {f['nom']} ({f['titre']})",
+        f"Dépôt distant : {f['origine'] or 'aucun'}",
+        f"Étiquettes : {', '.join(f['etiquettes']) or 'aucune'}",
         f"Commits : {f['nb_commits']} du {(f['premier_commit'] or '?')[:10]} au {(f['dernier_commit'] or '?')[:10]}",
         f"Contributeurs : {', '.join(c['nom'] + ' (' + str(c['commits']) + ')' for c in f['contributeurs'][:10])}",
         f"Fichiers : {f['nb_fichiers']} ; extensions : {json.dumps(f['extensions'], ensure_ascii=False)}",
@@ -156,6 +190,9 @@ def prompt_faits(f: dict) -> str:
         "",
         f"README ({f['readme'] or 'absent'}) :",
         f["texte_readme"] or "(aucun)",
+        "",
+        "PASSATION.md (état du travail à la date qu'elle indique) :",
+        f["texte_passation"] or "(absente)",
     ]
     return "\n".join(lignes)
 
@@ -165,7 +202,7 @@ def extraire_json(texte: str) -> dict:
     debut, fin = texte.find("{"), texte.rfind("}")
     if debut < 0 or fin < 0:
         raise ValueError("pas de JSON dans la réponse")
-    return json.loads(texte[debut : fin + 1])
+    return json.loads(texte[debut : fin + 1], strict=False)  # retours à la ligne bruts dans les chaînes
 
 
 def valider(r: dict) -> dict:
@@ -181,18 +218,48 @@ def valider(r: dict) -> dict:
         erreurs.append("mots_cles invalide")
     else:
         r["mots_cles"] = [m.strip().lower() for m in r["mots_cles"] if m.strip()][:8]
+    inco = r.setdefault("incoherences", [])
+    if not isinstance(inco, list) or not all(isinstance(e, str) for e in inco):
+        erreurs.append("incoherences invalide")
     chrono = r.get("chronologie", [])
     if not isinstance(chrono, list) or not all(isinstance(e, dict) and "fait" in e for e in chrono):
         erreurs.append("chronologie invalide")
+    elif not chrono:
+        erreurs.append("chronologie vide")  # la grammaire de LocalAI n'applique pas minItems
     if erreurs:
         raise ValueError("; ".join(erreurs))
     return r
+
+
+# Forme imposée à la réponse (response_format de l'API OpenAI, appliqué par LocalAI sous forme de grammaire).
+TEXTE = {"type": "string", "minLength": 1}
+SCHEMA_REPONSE = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["resume_court", "resume", "mots_cles", "chronologie", "pour_reprendre", "incoherences"],
+    "properties": {
+        "resume_court": TEXTE,
+        "resume": TEXTE,
+        "mots_cles": {"type": "array", "items": TEXTE, "minItems": 3, "maxItems": 8},
+        "chronologie": {
+            "type": "array", "minItems": 1, "maxItems": 6,
+            "items": {
+                "type": "object", "additionalProperties": False, "required": ["periode", "fait"],
+                "properties": {"periode": TEXTE, "fait": TEXTE},
+            },
+        },
+        "pour_reprendre": TEXTE,
+        "incoherences": {"type": "array", "items": TEXTE, "maxItems": 5},
+    },
+}
 
 
 def rediger(faits: dict, api: str, modele: str, cle: str | None, delai: int) -> dict:
     corps = {
         "model": modele,
         "temperature": 0.2,
+        "max_tokens": 1500,  # une fiche en prend ~600 ; borne une génération qui boucle
+        "response_format": {"type": "json_schema", "json_schema": {"name": "fiche", "strict": True, "schema": SCHEMA_REPONSE}},
         "messages": [
             {"role": "system", "content": CONSIGNE},
             {"role": "user", "content": prompt_faits(faits)},
@@ -233,7 +300,7 @@ def ecrire_fiche(faits: dict, ia: dict | None, modele: str | None) -> tuple[str,
     champs = {
         "schema": SCHEMA,
         "id": ident,
-        "titre": faits["nom"],
+        "titre": faits["titre"],
         "depot": faits["origine"],
         "commit": faits["commit"],
         "date_fiche": maintenant,
@@ -250,7 +317,7 @@ def ecrire_fiche(faits: dict, ia: dict | None, modele: str | None) -> tuple[str,
         "genere_par": {"modele": modele, "version_prompt": VERSION_PROMPT} if ia else None,
         "relu_par": None,
     }
-    corps = [entete(champs), f"# {faits['nom']}\n"]
+    corps = [entete(champs), f"# {faits['titre']}\n"]
     if ia:
         corps += [
             "## Résumé\n", "> Rédigé par l'archiviste (modèle local), non relu.\n",
@@ -259,6 +326,8 @@ def ecrire_fiche(faits: dict, ia: dict | None, modele: str | None) -> tuple[str,
             *(f"- **{e.get('periode', '?')}** : {e['fait']}" for e in ia.get("chronologie", [])),
             "", "## Pour reprendre le sujet\n", ia["pour_reprendre"].strip() + "\n",
         ]
+        if ia["incoherences"]:
+            corps += ["## Incohérences relevées\n", *(f"- {e}" for e in ia["incoherences"]), ""]
     else:
         corps += ["## Résumé\n", "_Fiche factuelle : aucun résumé généré (mode --sans-ia)._\n"]
     corps += [

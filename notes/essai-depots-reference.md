@@ -53,3 +53,47 @@ Stabilité : entre les deux passes, les faits cités et les erreurs sont les mê
 
 - Le comportement sur un dépôt volumineux, qui dépasserait les 16 k de contexte (étape 2, map-reduce).
 - La comparaison avec un autre modèle sur ces mêmes dépôts.
+
+---
+
+# Consigne `fiche-v2` sur les mêmes dépôts — 2026-09-27
+
+Mêmes clones et mêmes commits que ci-dessus. Changements de `fiche-v2` dans `travaux/archiviste.py` :
+- le modèle reçoit aussi `PASSATION.md` (6 000 caractères au plus), le dépôt distant et les étiquettes Git ;
+- la consigne dit quelles sources font foi et demande une liste `incoherences` ;
+- la consigne demande de garder l'objet nommé par un commit et de ne pas confondre outil et modèle ;
+- la réponse est contrainte par un schéma JSON (`response_format`), et `max_tokens` vaut 1500.
+
+## Mise au point (ce qui a cassé avant la version retenue)
+
+| Essai | Résultat |
+|---|---|
+| consigne seule, sans schéma | 5 fiches sur 6 en repli factuel : `resume` rendu en liste, `incoherences` en objets |
+| + schéma JSON | forme correcte, mais chronologie parfois vide (la grammaire de LocalAI n'applique pas `minItems`) → rejet ajouté dans `valider` |
+| + rejet des chronologies vides | 3 échecs sur 6 : retours à la ligne bruts dans les chaînes → `json.loads(..., strict=False)` |
+| + `strict=False` | 5 sur 6 ; une génération a bouclé 207 s puis HTTP 500 → `max_tokens: 1500` |
+| version retenue | **6 sur 6 sur deux passes**, 5,7 à 14 s par fiche |
+
+## Comparaison avec `fiche-v1`
+
+| Dépôt | `fiche-v1` | `fiche-v2` |
+|---|---|---|
+| `archiviste-local` (README périmé) | répète « testé seulement contre un faux serveur » ; « le prototype a migré en conteneur » | le README périmé est signalé comme incohérence au lieu d'être cru ; « LocalAI en conteneur » correctement nommé |
+| `optique-ondulatoire` | juste mais pauvre, deux libertés | plus riche et juste : interfrange λD/a = 6,50 mm pour 650 nm, 0,2 mm, 2 m (conforme à `travaux/interfrange.py` l. 10) |
+| `regles` | aucune erreur | **régresse** : suit sa `PASSATION.md` périmée (« pas encore publié », « étiquette v1 non posée ») alors que les faits donnés au modèle montrent l'étiquette `v1` et le dépôt GitHub |
+
+Liste `incoherences` : 0 à 3 par fiche. Environ la moitié sont réelles : README et passation de `regles` en
+désaccord sur l'étiquette, README périmé ici. Les autres sont fausses : « @Pwouette » et « Romain Caldani »
+pris pour deux personnes, une absence d'information prise pour une contradiction. C'est une aide à la
+relecture, pas un verdict.
+
+## Ce que l'essai apprend
+
+1. Donner la passation enrichit nettement les fiches, à condition qu'elle soit à jour. Le point faible
+   passe du README à la passation : **la `PASSATION.md` de `regles` est en retard** (elle dit le dépôt non
+   publié et sans étiquette).
+2. Même quand les faits calculés contredisent un document, Ministral 3 8B suit souvent le document.
+   Un modèle plus grand (rôle `archiviste-grand`) ou une vérification déterministe des affirmations
+   (publication, étiquettes) seraient les suites possibles.
+3. Le schéma JSON rend la sortie fiable ; les trois garde-fous ajoutés (chronologie non vide,
+   `strict=False`, `max_tokens`) viennent chacun d'un échec observé.

@@ -35,6 +35,8 @@ et le résumé confond le registre commun avec `Memnius-PEE/archives`. Le marqua
 
 
 ## 2. Ce qui est entré, et qui l'a vérifié
+- Consigne `fiche-v2` dans `travaux/archiviste.py` : passation, dépôt distant et étiquettes donnés au modèle, liste `incoherences`, schéma JSON imposé. Essayée deux passes sur les trois dépôts de référence, 6 fiches sur 6 ; comparaison avec `fiche-v1` dans `notes/essai-depots-reference.md`.
+- `travaux/archiviste.py` lit `id`, `titre` et `licence` dans `memnius.yaml` (repli : nom du dossier, fichier LICENSE). Vérifié en `--sans-ia` sur les trois dépôts de référence : `optique-ondulatoire` et `archiviste-local` sortent avec leur titre et `CC-BY-4.0` ; `regles` n'a ni `memnius.yaml` ni LICENSE, donc `licence: null`, ce qui est exact.
 - `notes/essai-depots-reference.md` : essai sur `optique-ondulatoire`, `regles` et `archiviste-local`, deux passes chacun ; affirmations vérifiées une à une par l'agent contre `git log` et les fichiers.
 - `README.md` : ne dit plus « testé seulement contre un faux serveur » (le modèle le recopiait dans la fiche).
 - `travaux/local/` : `compose.yaml` (LocalAI en conteneur, port 8081), configuration du rôle `archiviste-moyen` et scripts `telecharger.sh`, `lancer.sh`, `verifier.sh`. Exécutés sur le poste de Romain le 2026-09-27 (sortie en §1).
@@ -58,15 +60,16 @@ et le résumé confond le registre commun avec `Memnius-PEE/archives`. Le marqua
 - Aucun.
 
 ## 5. Ce qui reste dû ou en cours *
-0. Consigne `fiche-v2` : fournir aussi `PASSATION.md` au modèle et lui faire signaler les contradictions entre README et commits (`notes/essai-depots-reference.md`), puis rejouer l'essai sur les trois dépôts de référence.
-1. Relire `docs/architecture.md` (bon premier ticket).
-2. Répondre aux questions de `notes/questions-ouvertes.md`, une décision par réponse.
-3. Étape 2 sur le papier : cache par empreinte, map-reduce, gitleaks avant envoi (`docs/architecture.md` §10).
-4. `travaux/archiviste.py` prend le titre dans le nom du dossier et cherche un fichier LICENSE : lire plutôt `titre` et `licence`
-   dans `memnius.yaml` (sortie ci-dessus : `licence: null` alors que la fiche déclare CC-BY-4.0).
+1. Mettre à jour `PASSATION.md` du dépôt `regles` (elle dit le dépôt non publié et sans étiquette v1) : `fiche-v2` la croit.
+2. Relire `docs/architecture.md` (bon premier ticket).
+3. Répondre aux questions de `notes/questions-ouvertes.md`, une décision par réponse.
+4. Étape 2 sur le papier : cache par empreinte, map-reduce, gitleaks avant envoi (`docs/architecture.md` §10).
 5. Faire produire à `travaux/archiviste.py` un `etat.json` au format du README de `Memnius-PEE/archives`, à la place de son registre provisoire.
 
 ## 6. Pièges rencontrés
+- `archiviste.py` vise `localhost:8080` par défaut ; l'embryon écoute sur 8081 : passer `--api http://127.0.0.1:8081/v1` ou `LOCALAI_API`.
+- La grammaire JSON de LocalAI n'applique ni `minItems` ni `minLength` : `valider` doit rejeter ce que le schéma ne garantit pas.
+- Le dépôt `regles` n'a ni `memnius.yaml` ni fichier de licence : sa fiche le dit, ce n'est pas un défaut de l'archiviste.
 - LocalAI en conteneur n'installe pas seul le moteur `llama-cpp` (« backend not found ») : `compose.yaml` le demande par `LOCALAI_EXTERNAL_BACKENDS`. Le moteur installé suit l'étiquette `latest` de la galerie, il n'est pas figé.
 - Le port 8080 du poste est pris par le conteneur `carnet-localai` (autre projet) : l'embryon écoute sur 8081.
 - `archiviste.py fiche` lit l'historique du dépôt Git qui contient le dossier donné : sur un sous-dossier d'un autre dépôt,
