@@ -6,7 +6,7 @@ source "$(dirname "$0")/config.sh"
 mkdir -p "$ARCHIVISTE_MODELES"
 cible="$ARCHIVISTE_MODELES/$GGUF"
 if [[ ! -f "$cible" ]]; then
-  curl -L --fail --continue-at - -o "$cible.partiel" "$GGUF_URL"
+  curl -L --fail --progress-bar --continue-at - -o "$cible.partiel" "$GGUF_URL"
   mv "$cible.partiel" "$cible"
 fi
 echo "$GGUF_SHA256  $cible" | sha256sum --check

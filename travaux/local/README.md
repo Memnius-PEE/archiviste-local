@@ -20,8 +20,8 @@ travaux/local/verifier.sh      # liste les modèles, appel minimal, fiche de ce 
 docker compose -f travaux/local/compose.yaml down   # arrêt
 ```
 
-Budget mémoire attendu `[non vérifié]` : ~5 Go de poids + ~2 Go de cache pour 16 k de contexte, soit ~7 Go
-sur les ~9 Go libres. Si la carte manque de place, baisser `context_size` à 8192 dans
+Mesuré le 2026-09-27 (`nvidia-smi` pendant `verifier.sh`) : 7 544 Mio pour le moteur avec 16 k de contexte,
+10 444 / 12 227 Mio sur la carte ; première fiche en 7 s, modèle déjà chargé. Si la carte manque de place, baisser `context_size` à 8192 dans
 `modeles/archiviste-moyen.yaml`.
 
 Les chemins et l'adresse se changent par variables d'environnement (`config.sh`) :
