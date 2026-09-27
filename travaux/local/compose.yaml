@@ -1,0 +1,30 @@
+# LocalAI conteneurisé pour l'embryon de l'archiviste : un seul poste, GPU NVIDIA, pas de P2P.
+# Lancé par lancer.sh, qui fournit les variables ci-dessous (voir config.sh).
+name: archiviste
+services:
+  localai:
+    image: localai/localai:${LOCALAI_IMAGE_TAG:-v4.9.0-gpu-nvidia-cuda-12}
+    container_name: archiviste-localai
+    ports:
+      - "${ARCHIVISTE_ADRESSE:-127.0.0.1:8081}:8080"   # écoute locale seulement
+    environment:
+      MODELS_PATH: /models
+      DISABLE_TELEMETRY: "true"
+      LOCALAI_EXTERNAL_BACKENDS: llama-cpp             # installé depuis la galerie au 1er démarrage (variante CUDA choisie seule)
+      LOCALAI_SINGLE_ACTIVE_BACKEND: "true"
+      LOCALAI_WATCHDOG_IDLE: "true"                   # libère la VRAM après 15 min sans requête
+      LOCALAI_WATCHDOG_IDLE_TIMEOUT: 15m
+    volumes:
+      - ${ARCHIVISTE_MODELES:?}:/models                 # poids, hors du dépôt
+      - ./modeles/archiviste-moyen.yaml:/models/archiviste-moyen.yaml:ro
+      - moteurs:/backends                               # moteurs installés, gardés entre deux lancements
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: "no"
+volumes:
+  moteurs:

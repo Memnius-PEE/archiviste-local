@@ -15,3 +15,7 @@ __pycache__/
 # Secrets
 .env
 *.key
+# Poids et moteurs de modèles : jamais dans le dépôt
+*.gguf
+/models/
+/backends/
