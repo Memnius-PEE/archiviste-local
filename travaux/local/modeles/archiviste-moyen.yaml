@@ -1,0 +1,21 @@
+# Rôle « archiviste-moyen » (docs/architecture.md §4) pour LocalAI, sur un GPU de 12 Go.
+# Le code de l'archiviste ne connaît que le nom du rôle ; seul ce fichier dit quel GGUF est derrière.
+# Sur l'essaim ou sur un serveur dédié, chaque machine garde ce nom et adapte le fichier de poids.
+name: archiviste-moyen
+backend: llama-cpp
+context_size: 16384        # §4 : 8 k–16 k ; la fiche de l'étape 1 tient largement dedans
+gpu_layers: 99             # tout le modèle sur la carte
+f16: true
+mmap: true
+known_usecases:
+  - chat
+options:
+  - use_jinja:true         # gabarit de conversation embarqué dans le GGUF
+template:
+  use_tokenizer_template: true
+parameters:
+  # Ministral 3 8B Instruct 2512, Q4_K_M (5 198 386 720 octets, Apache 2.0).
+  # Source : https://huggingface.co/unsloth/Ministral-3-8B-Instruct-2512-GGUF
+  # Téléchargé par ../telecharger.sh dans le dossier des modèles, jamais dans ce dépôt.
+  model: Ministral-3-8B-Instruct-2512-Q4_K_M.gguf
+  temperature: 0.2

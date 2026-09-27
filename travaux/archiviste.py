@@ -8,7 +8,7 @@ Python 3.9+ et git suffisent (bibliothèque standard uniquement).
 
     # fiche complète via l'API OpenAI-compatible de LocalAI
     python3 archiviste.py fiche chemin/vers/depot -o fiches/ \
-        --api http://localhost:8080/v1 --modele qwen3-8b
+        --api http://localhost:8080/v1 --modele archiviste-moyen
 
     # agrège les en-têtes des fiches en un registre JSON
     python3 archiviste.py registre fiches/ -o registre.json
@@ -327,7 +327,7 @@ def main() -> int:
     f.add_argument("depot")
     f.add_argument("-o", "--sortie", default="fiches")
     f.add_argument("--api", default=os.environ.get("LOCALAI_API", "http://localhost:8080/v1"))
-    f.add_argument("--modele", default=os.environ.get("ARCHIVISTE_MODELE", "qwen3-8b"))
+    f.add_argument("--modele", default=os.environ.get("ARCHIVISTE_MODELE", "archiviste-moyen"))
     f.add_argument("--cle", help="clé d'API LocalAI si l'instance en exige une")
     f.add_argument("--delai", type=int, default=600, help="secondes avant abandon de l'appel au modèle")
     f.add_argument("--sans-ia", action="store_true", help="n'appelle pas le modèle")
