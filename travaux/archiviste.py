@@ -67,6 +67,16 @@ def slug(nom: str) -> str:
 
 # --- Collecte des faits (déterministe) --------------------------------------
 
+def lire_fiche_sujet(texte: str) -> dict:
+    """Valeurs simples de premier niveau de memnius.yaml (sans dépendance YAML)."""
+    champs = {}
+    for ligne in texte.splitlines():
+        m = re.match(r"([a-z_]+):\s*([^#>|\[{\s][^#]*?)\s*(#.*)?$", ligne)
+        if m:
+            champs[m.group(1)] = m.group(2).strip("'\"")
+    return champs
+
+
 def collecter(depot: Path) -> dict:
     depot = depot.resolve()
     head = git(depot, "rev-parse", "HEAD").strip()
@@ -99,9 +109,14 @@ def collecter(depot: Path) -> dict:
     if readme:
         texte_readme = masquer(git(depot, "show", f"HEAD:{readme}")[:LIMITE_README])
 
+    sujet = {}
+    if present("memnius.yaml"):
+        sujet = lire_fiche_sujet(git(depot, "show", "HEAD:memnius.yaml"))
+
     dates = sorted(c["date"] for c in commits)
     return {
-        "nom": depot.name,
+        "nom": sujet.get("id") or depot.name,
+        "titre": sujet.get("titre") or depot.name,
         "chemin": str(depot),
         "origine": origine,
         "commit": head,
@@ -115,7 +130,7 @@ def collecter(depot: Path) -> dict:
         "readme": readme,
         "texte_readme": texte_readme,
         "instructions_agents": [f for f in ("AGENTS.md", "CLAUDE.md", ".cursorrules", ".github/copilot-instructions.md") if present(f)],
-        "licence": present("LICENSE", "LICENSE.md", "LICENCE", "COPYING"),
+        "licence": sujet.get("licence") or present("LICENSE", "LICENSE.md", "LICENCE", "COPYING"),
         "derniers_commits": [
             {"date": c["date"][:10], "auteur": c["auteur"], "sujet": masquer(c["sujet"])}
             for c in commits[:LIMITE_COMMITS]
@@ -145,7 +160,7 @@ N'invente rien qui ne figure pas dans les faits. Si une information manque, dis-
 
 def prompt_faits(f: dict) -> str:
     lignes = [
-        f"Dépôt : {f['nom']}",
+        f"Dépôt : {f['nom']} ({f['titre']})",
         f"Commits : {f['nb_commits']} du {(f['premier_commit'] or '?')[:10]} au {(f['dernier_commit'] or '?')[:10]}",
         f"Contributeurs : {', '.join(c['nom'] + ' (' + str(c['commits']) + ')' for c in f['contributeurs'][:10])}",
         f"Fichiers : {f['nb_fichiers']} ; extensions : {json.dumps(f['extensions'], ensure_ascii=False)}",
@@ -233,7 +248,7 @@ def ecrire_fiche(faits: dict, ia: dict | None, modele: str | None) -> tuple[str,
     champs = {
         "schema": SCHEMA,
         "id": ident,
-        "titre": faits["nom"],
+        "titre": faits["titre"],
         "depot": faits["origine"],
         "commit": faits["commit"],
         "date_fiche": maintenant,
@@ -250,7 +265,7 @@ def ecrire_fiche(faits: dict, ia: dict | None, modele: str | None) -> tuple[str,
         "genere_par": {"modele": modele, "version_prompt": VERSION_PROMPT} if ia else None,
         "relu_par": None,
     }
-    corps = [entete(champs), f"# {faits['nom']}\n"]
+    corps = [entete(champs), f"# {faits['titre']}\n"]
     if ia:
         corps += [
             "## Résumé\n", "> Rédigé par l'archiviste (modèle local), non relu.\n",
