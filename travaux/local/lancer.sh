@@ -1,18 +1,9 @@
 #!/usr/bin/env bash
-# Démarre LocalAI seul sur ce poste (mode « embryon » : pas de P2P, pas de fédération),
-# écoute en local et sert les rôles déclarés dans travaux/local/modeles/.
-# Au premier lancement, LocalAI télécharge son moteur llama-cpp (CUDA) dans $MOTEURS.
+# Démarre LocalAI en conteneur sur ce poste (mode « embryon » : pas de P2P, pas de fédération).
+# Arrêt : docker compose -f travaux/local/compose.yaml down
 set -euo pipefail
 source "$(dirname "$0")/config.sh"
 
-mkdir -p "$MODELES" "$MOTEURS"
-for f in "$ICI"/modeles/*.yaml; do
-  ln -sf "$f" "$MODELES/$(basename "$f")"
-done
-[[ -f "$MODELES/$GGUF" ]] || { echo "poids absents : lancez d'abord $ICI/telecharger.sh" >&2; exit 1; }
-
-exec local-ai run \
-  --models-path "$MODELES" \
-  --backends-path "$MOTEURS" \
-  --address "$ADRESSE" \
-  "$@"
+[[ -f "$ARCHIVISTE_MODELES/$GGUF" ]] || { echo "poids absents : lancez d'abord $ICI/telecharger.sh" >&2; exit 1; }
+docker compose -f "$ICI/compose.yaml" up -d "$@"
+echo "LocalAI démarre sur $API ; journal : docker logs -f archiviste-localai"

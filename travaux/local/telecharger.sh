@@ -3,8 +3,8 @@
 set -euo pipefail
 source "$(dirname "$0")/config.sh"
 
-mkdir -p "$MODELES"
-cible="$MODELES/$GGUF"
+mkdir -p "$ARCHIVISTE_MODELES"
+cible="$ARCHIVISTE_MODELES/$GGUF"
 if [[ ! -f "$cible" ]]; then
   curl -L --fail --continue-at - -o "$cible.partiel" "$GGUF_URL"
   mv "$cible.partiel" "$cible"

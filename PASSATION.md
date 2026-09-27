@@ -3,7 +3,7 @@
 <!-- Réécrite à chaque fin de session (règle C9) ; l'historique Git garde les précédentes. -->
 
 ## 0. En une phrase *
-Un embryon local est prêt dans `travaux/local/` (LocalAI + Ministral 3 8B sur la RTX 5070 de Romain) ; les poids ne sont pas encore téléchargés, donc aucun appel réel n'a encore eu lieu.
+Un embryon local est prêt dans `travaux/local/` (LocalAI en conteneur + Ministral 3 8B sur la RTX 5070 de Romain) ; les poids ne sont pas encore téléchargés, donc aucun appel réel n'a encore eu lieu.
 
 ## 1. État mesuré *
 ```
@@ -17,11 +17,13 @@ Bilan : 5/5 gardes vertes
 ```
 ```
 $ nvidia-smi ; local-ai --version          (poste de Romain, 2026-09-27)
-NVIDIA GeForce RTX 5070, 12227 MiB (≈3 Gio pris par le bureau), pilote 595.84, CUDA 13.2 ; LocalAI v4.9.0
+NVIDIA GeForce RTX 5070, 12227 MiB (≈3 Gio pris par le bureau), pilote 595.84, CUDA 13.2
+$ docker version ; dpkg -l nvidia-container-toolkit ; docker images
+Docker 29.8.1, toolkit 1.20.1, image localai/localai v4.9.0-gpu-nvidia-cuda-12 présente
 ```
 
 ## 2. Ce qui est entré, et qui l'a vérifié
-- `travaux/local/` : configuration du rôle `archiviste-moyen` pour LocalAI et scripts `telecharger.sh`, `lancer.sh`, `verifier.sh`. Syntaxe vérifiée (`bash -n`), jamais exécutés.
+- `travaux/local/` : `compose.yaml` (LocalAI en conteneur, port 8081), configuration du rôle `archiviste-moyen` et scripts `telecharger.sh`, `lancer.sh`, `verifier.sh`. Syntaxe vérifiée (`bash -n`, `docker compose config`), jamais exécutés.
 - `travaux/archiviste.py` : modèle par défaut `archiviste-moyen` (le rôle de 0002) au lieu de `qwen3-8b`.
 - `docs/architecture.md` : étude initiale de l'archiviste, reprise de l'étude du projet Claude « Memnius » et alignée sur
   GitHub, le dépôt `Memnius-PEE/archives` et `etat.json` ; exemples de fiche passés sur `optique-ondulatoire`. Pas encore relue par une personne.
@@ -31,7 +33,7 @@ NVIDIA GeForce RTX 5070, 12227 MiB (≈3 Gio pris par le bureau), pilote 595.84,
 
 ## 3. Décisions prises (numéros du journal)
 - 0005 : embryon sur le GPU d'un seul poste ; remplace en partie 0004 (l'essaim reste hors de portée).
-- 0006 : LocalAI + Ministral 3 8B Instruct Q4_K_M pour `archiviste-moyen` (en attente de validation par Romain).
+- 0006 : LocalAI en conteneur + Ministral 3 8B Instruct Q4_K_M pour `archiviste-moyen` (en attente de validation par Romain).
 - 0001 : socle v1, niveau recommandé.
 - 0002 : essaim LocalAI en mode fédéré, modèles désignés par rôle.
 - 0003 : faits calculés par Git, texte du modèle marqué « non relu ».
@@ -50,6 +52,7 @@ NVIDIA GeForce RTX 5070, 12227 MiB (≈3 Gio pris par le bureau), pilote 595.84,
 5. Faire produire à `travaux/archiviste.py` un `etat.json` au format du README de `Memnius-PEE/archives`, à la place de son registre provisoire.
 
 ## 6. Pièges rencontrés
+- Le port 8080 du poste est pris par le conteneur `carnet-localai` (autre projet) : l'embryon écoute sur 8081.
 - `archiviste.py fiche` lit l'historique du dépôt Git qui contient le dossier donné : sur un sous-dossier d'un autre dépôt,
   les faits sont ceux du dépôt englobant.
 - Ne pas commiter ici les fiches produites : elles appartiennent au futur dépôt `Memnius-PEE/archives`.

@@ -1,9 +1,8 @@
 # Réglages communs aux scripts de travaux/local/, surchargeables par l'environnement.
-# Les poids et les moteurs de LocalAI vivent hors du dépôt (règle des 10 Mo).
-MODELES="${ARCHIVISTE_MODELES:-$HOME/models}"
-MOTEURS="${ARCHIVISTE_MOTEURS:-$HOME/backends}"
-ADRESSE="${ARCHIVISTE_ADRESSE:-127.0.0.1:8080}"   # locale seulement : pas d'essaim, pas d'accès réseau
-API="${LOCALAI_API:-http://$ADRESSE/v1}"
+# Les poids vivent hors du dépôt (règle des 10 Mo) ; le moteur de LocalAI vit dans un volume Docker.
+export ARCHIVISTE_MODELES="${ARCHIVISTE_MODELES:-$HOME/models}"
+export ARCHIVISTE_ADRESSE="${ARCHIVISTE_ADRESSE:-127.0.0.1:8081}"   # 8080 est pris par un autre conteneur du poste
+API="${LOCALAI_API:-http://$ARCHIVISTE_ADRESSE/v1}"
 ROLE="${ARCHIVISTE_MODELE:-archiviste-moyen}"
 
 GGUF="Ministral-3-8B-Instruct-2512-Q4_K_M.gguf"
