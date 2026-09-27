@@ -3,7 +3,7 @@
 <!-- Réécrite à chaque fin de session (règle C9) ; l'historique Git garde les précédentes. -->
 
 ## 0. En une phrase *
-L'embryon local tourne : LocalAI en conteneur sert Ministral 3 8B sur la RTX 5070 de Romain et l'archiviste a produit sa première fiche réelle (celle de ce dépôt), en 7 s.
+L'embryon local tourne (LocalAI en conteneur + Ministral 3 8B sur la RTX 5070 de Romain) et a été essayé sur les trois dépôts de référence : fiches justes pour `regles`, presque justes pour `optique-ondulatoire`, fausses là où le README de ce dépôt était en retard.
 
 ## 1. État mesuré *
 ```
@@ -35,6 +35,8 @@ et le résumé confond le registre commun avec `Memnius-PEE/archives`. Le marqua
 
 
 ## 2. Ce qui est entré, et qui l'a vérifié
+- `notes/essai-depots-reference.md` : essai sur `optique-ondulatoire`, `regles` et `archiviste-local`, deux passes chacun ; affirmations vérifiées une à une par l'agent contre `git log` et les fichiers.
+- `README.md` : ne dit plus « testé seulement contre un faux serveur » (le modèle le recopiait dans la fiche).
 - `travaux/local/` : `compose.yaml` (LocalAI en conteneur, port 8081), configuration du rôle `archiviste-moyen` et scripts `telecharger.sh`, `lancer.sh`, `verifier.sh`. Exécutés sur le poste de Romain le 2026-09-27 (sortie en §1).
 - `travaux/archiviste.py` : modèle par défaut `archiviste-moyen` (le rôle de 0002) au lieu de `qwen3-8b`.
 - `docs/architecture.md` : étude initiale de l'archiviste, reprise de l'étude du projet Claude « Memnius » et alignée sur
@@ -45,7 +47,8 @@ et le résumé confond le registre commun avec `Memnius-PEE/archives`. Le marqua
 
 ## 3. Décisions prises (numéros du journal)
 - 0005 : embryon sur le GPU d'un seul poste ; remplace en partie 0004 (l'essaim reste hors de portée).
-- 0006 : LocalAI en conteneur + Ministral 3 8B Instruct Q4_K_M pour `archiviste-moyen` (en attente de validation par Romain).
+- 0006 : LocalAI en conteneur + Ministral 3 8B Instruct Q4_K_M pour `archiviste-moyen`.
+- 0007 : 0006 validée ; dépôts de référence `optique-ondulatoire`, `regles`, `archiviste-local`.
 - 0001 : socle v1, niveau recommandé.
 - 0002 : essaim LocalAI en mode fédéré, modèles désignés par rôle.
 - 0003 : faits calculés par Git, texte du modèle marqué « non relu ».
@@ -55,7 +58,7 @@ et le résumé confond le registre commun avec `Memnius-PEE/archives`. Le marqua
 - Aucun.
 
 ## 5. Ce qui reste dû ou en cours *
-0. Juger la qualité de Ministral 3 8B sur les trois dépôts de référence (question 3) avant de valider la décision 0006.
+0. Consigne `fiche-v2` : fournir aussi `PASSATION.md` au modèle et lui faire signaler les contradictions entre README et commits (`notes/essai-depots-reference.md`), puis rejouer l'essai sur les trois dépôts de référence.
 1. Relire `docs/architecture.md` (bon premier ticket).
 2. Répondre aux questions de `notes/questions-ouvertes.md`, une décision par réponse.
 3. Étape 2 sur le papier : cache par empreinte, map-reduce, gitleaks avant envoi (`docs/architecture.md` §10).
@@ -72,7 +75,7 @@ et le résumé confond le registre commun avec `Memnius-PEE/archives`. Le marqua
 
 ## 7. Ce qui n'a PAS été vérifié *
 - Aucun appel à un vrai modèle, ni local ni sur l'essaim.
-- La qualité des fiches sur d'autres dépôts que celui-ci, et le comportement sur un dépôt volumineux (contexte de 16 k).
+- Le comportement sur un dépôt volumineux (contexte de 16 k) et la comparaison avec un autre modèle.
 - L'essaim et le serveur dédié : seule la configuration est prête.
 - Les modèles et tailles mémoire de `docs/architecture.md` §4 sont des ordres de grandeur `[non vérifié]` sur le matériel des membres.
 - Les noms de commandes du mode fédéré de LocalAI varient selon la version `[non vérifié]`.

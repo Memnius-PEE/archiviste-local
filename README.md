@@ -17,11 +17,12 @@ le sujet. Il alimente le registre commun et scelle les sujets endormis. Il tourn
 répartis sur l'essaim LocalAI des membres, pour que rien ne sorte du groupe.
 
 Déjà acquis : une architecture (`docs/architecture.md`) et un prototype de la première étape
-(`travaux/archiviste.py`), testé seulement contre un faux serveur. Les faits viennent de Git, jamais du
+(`travaux/archiviste.py`), qui tourne sur la carte graphique d'un poste avec LocalAI en conteneur et
+Ministral 3 8B (`travaux/local/`, décisions 0005 à 0007). Les faits viennent de Git, jamais du
 modèle, et le texte rédigé par un modèle reste marqué « non relu » tant qu'une personne ne l'a pas vérifié.
 
-L'étude est en **phase prospective** : on conçoit et on compare, on ne lance rien sur l'essaim pour l'instant
-(décision 0004). L'archiviste en fonctionnement écrira plus tard dans `Memnius-PEE/archives`, pas ici.
+Les essais réels se font sur le poste d'un membre ; on ne lance rien sur l'essaim pour l'instant
+(décisions 0004 et 0005). L'archiviste en fonctionnement écrira plus tard dans `Memnius-PEE/archives`, pas ici.
 
 ## Contribuer en 5 minutes
 
